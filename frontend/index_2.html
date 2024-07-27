@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('/media/background_pic/library.jpg');
+            background-size: cover;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 1em;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1em;
+        }
+        .container {
+            padding: 2em;
+            background-color: rgba(255, 255, 255, 0.8);
+            margin: 2em auto;
+            width: 80%;
+            border-radius: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .form-group {
+            margin: 1em 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 0.5em;
+            margin-bottom: 1em;
+        }
+        #booksSection, #adminSection {
+            margin-top: 2em;
+        }
+        #booksTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #booksTable th, #booksTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #booksTable th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div>
+            <a href="#" id="homeLink">Home</a>
+            <a href="#" id="booksLink">Books</a>
+            <a href="#" id="adminLink">Admin</a>
+        </div>
+        <div>
+            <a href="#" id="loginLink">Login</a>
+            <a href="#" id="registerLink">Register</a>
+            <a href="#" id="profileLink">Profile</a>
+            <a href="#" id="logoutLink">Logout</a>
+        </div>
+    </div>
+
+    <div class="container" id="homeSection">
+        <h1 id="welcomeMessage">Welcome, Guest!</h1>
+    </div>
+
+    <div class="container hidden" id="registerSection">
+        <h2>Register</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="regUsername">Username</label>
+                <input type="text" id="regUsername" required>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" required>
+            </div>
+            <div class="form-group">
+                <label for="regRole">Role</label>
+                <select id="regRole">
+                    <option value="admin">Admin</option>
+                    <option value="customer">Customer</option>
+                </select>
+            </div>
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
+    <div class="container hidden" id="loginSection">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div id="profileSection" class="container hidden">
+        <h2>Profile</h2>
+        <form id="profileForm">
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name"><br>
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name"><br>
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city"><br>
+            <label for="age">Age:</label>
+            <input type="text" id="age" name="age"><br>
+            <label for="phone_number">Phone Number:</label>
+            <input type="text" id="phone_number" name="phone_number"><br>
+            <label for="email">Email:</label>
+            <input type="text" id="email" name="email"><br>
+            <button type="submit">Update Profile</button>
+        </form>
+    </div>
+
+    <div class="container hidden" id="adminFunctionsSection">
+        <h2>Admin Functions</h2>
+        <h3>Add Book</h3>
+        <form id="addBookForm">
+            <label for="bookTitle">Title:</label>
+            <input type="text" id="bookTitle" name="bookTitle" required><br>
+
+            <label for="bookAuthor">Author:</label>
+            <input type="text" id="bookAuthor" name="bookAuthor" required><br>
+
+            <label for="year_published">Year Published:</label>
+            <input type="number" id="year_published" name="year_published" required><br>
+
+            <label for="loan_type">Loan Type:</label>
+            <select id="loan_type" name="loan_type" required>
+                <option value="10 days">10 days</option>
+                <option value="5 days">5 days</option>
+                <option value="2 days">2 days</option>
+                <option value="5 minutes">5 minutes</option>
+            </select><br>
+
+            <button type="submit">Add Book</button>
+        </form>
+
+        <h3>View All Books</h3>
+        <button onclick="getAllBooks()">Get All Books</button>
+        <section id="booksSection">
+            <table id="booksTable">
+                <!-- Table content will be populated by JavaScript -->
+            </table>
+        </section>
+    </div>
+
+    <div class="container hidden" id="booksSection">
+        <h2>Books</h2>
+        <h3>All Books</h3>
+        <button id="getBooksBtn">See All Books</button>
+        <table id="allBooksTable">
+            <!-- Table content will be populated by JavaScript -->
+        </table>
+
+        <h3>Find Book</h3>
+        <form id="findBookForm">
+            <div class="form-group">
+                <label for="findBookQuery">Search by Title or Author</label>
+                <input type="text" id="findBookQuery" required>
+            </div>
+            <button type="submit">Find Book</button>
+        </form>
+        <div id="findBookResults"></div>
+    </div>
+        <!-- <h3>View All Customers</h3>
+        <div id="customersList"></div>
+        <button onclick="getAllCustomers()">Get All Customers</button> -->
+
+        <!-- <h3>Search for a Customer</h3>
+        <form id="searchCustomersForm">
+            <div class="form-group">
+                <label for="searchCustomerQuery">Customer Name</label>
+                <input type="text" id="searchCustomerQuery" required>
+            </div>
+            <button type="submit">Search</button>
+        </form>
+        <div id="searchCustomerResults"></div> -->
+        <!-- empty -->
+
+        <!-- <h3>Update Book</h3>
+        <form id="updateBookForm">
+            <div class="form-group">
+                <label for="bookId">Book ID</label>
+                <input type="text" id="bookId" required>
+            </div>
+            <div class="form-group">
+                <label for="updateBookTitle">Title</label>
+                <input type="text" id="updateBookTitle">
+            </div>
+            <div class="form-group">
+                <label for="updateBookAuthor">Author</label>
+                <input type="text" id="updateBookAuthor">
+            </div>
+            <button type="submit">Update Book</button>
+        </form> -->
+
+        <!-- <h3>Get Late Loans</h3>
+        <div id="lateLoansList"></div>
+        <button onclick="getLateLoans()">Get Late Loans</button> -->
+        
+
+    
+
+        <!-- <h3>Borrow a Book</h3>
+        <form id="borrowBookForm">
+            <div class="form-group">
+                <label for="bookIdToBorrow">Book ID</label>
+                <input type="text" id="bookIdToBorrow" required>
+            </div>
+            <button type="submit">Borrow</button>
+        </form> -->
+
+        <!-- <h3>Return a Book</h3>
+        <form id="returnBookForm">
+            <div class="form-group">
+                <label for="bookIdToReturn">Book ID</label>
+                <input type="text" id="bookIdToReturn" required>
+            </div>
+            <button type="submit">Return</button>
+        </form> -->
+
+        <!-- <h3>View Current Loans</h3>
+        <div id="currentLoansList"></div>
+        <button onclick="getCurrentLoans()">Get Current Loans</button> -->
+
+        <!-- <h3>Get Loan History</h3>
+        <div id="loanHistoryList"></div>
+        <button onclick="getLoanHistory()">Get Loan History</button> -->
+
+
+    <script>
+
+        const MY_SERVER = "http://127.0.0.1:5000"
+
+        
+        // Event listeners for navbar links
+document.getElementById('homeLink').addEventListener('click', () => showSection('home'));
+document.getElementById('profileLink').addEventListener('click', () => {
+    showSection('profile');
+    fetchProfileData();
+});
+document.getElementById('booksLink').addEventListener('click', () => showSection('books'));
+document.getElementById('adminLink').addEventListener('click', () => showSection('adminFunctions'));
+document.getElementById('loginLink').addEventListener('click', () => showSection('login'));
+document.getElementById('registerLink').addEventListener('click', () => showSection('register'));
+document.getElementById('logoutLink').addEventListener('click', () => handleLogout());
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Navbar links event listeners
+    const homeLink = document.getElementById('homeLink');
+    const profileLink = document.getElementById('profileLink');
+    const booksLink = document.getElementById('booksLink');
+    const adminLink = document.getElementById('adminLink');
+    const loginLink = document.getElementById('loginLink');
+    const registerLink = document.getElementById('registerLink');
+    const logoutLink = document.getElementById('logoutLink');
+    
+    if (homeLink) homeLink.addEventListener('click', () => showSection('home'));
+    if (profileLink) profileLink.addEventListener('click', () => {
+        showSection('profile');
+        fetchProfileData();
+    });
+    if (booksLink) booksLink.addEventListener('click', () => showSection('books'));
+    if (adminLink) adminLink.addEventListener('click', () => showSection('adminFunctions'));
+    if (loginLink) loginLink.addEventListener('click', () => showSection('login'));
+    if (registerLink) registerLink.addEventListener('click', () => showSection('register'));
+    if (logoutLink) logoutLink.addEventListener('click', () => handleLogout());
+
+    // Initial welcome message setup
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    const username = localStorage.getItem('username');
+    const welcomeMessage = document.getElementById('welcomeMessage');
+
+    if (token && role && welcomeMessage) {
+        axios.get(`${MY_SERVER}/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(response => {
+            welcomeMessage.innerText = `Welcome, ${response.data.first_name || username}`;
+            const adminFunctions = document.getElementById('adminFunctionsSection');
+            const customerFunctions = document.getElementById('customerFunctionsSection');
+
+            if (adminFunctions && customerFunctions) {
+                if (role === 'admin') {
+                    adminFunctions.classList.remove('hidden');
+                    customerFunctions.classList.add('hidden');
+                } else {
+                    adminFunctions.classList.add('hidden');
+                    customerFunctions.classList.remove('hidden');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Failed to fetch profile:', error.message);
+            welcomeMessage.innerText = 'Welcome, Guest';
+        });
+    } else if (welcomeMessage) {
+        welcomeMessage.innerText = 'Welcome, Guest';
+    }
+        });
+
+        // Register form event listener
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('regRole').value;
+            await registerUser(username, password, role); // Await the async registerUser function
+        });
+    }
+
+document.getElementById('loginForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    await loginUser(username, password); // Await the async loginUser function
+});
+
+
+
+document.getElementById('profileForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const data = {
+        first_name: document.getElementById('first_name').value,
+        last_name: document.getElementById('last_name').value,
+        city: document.getElementById('city').value,
+        age: document.getElementById('age').value,
+        phone_number: document.getElementById('phone_number').value,
+        email: document.getElementById('email').value
+    };
+    await updateProfileData(data);
+});
+
+//     // Create an object to store only non-empty fields
+//     const updatedProfile = {};
+//     if (first_name.trim() !== '') updatedProfile.first_name = first_name;
+//     if (last_name.trim() !== '') updatedProfile.last_name = last_name;
+//     if (city.trim() !== '') updatedProfile.city = city;
+//     if (age.trim() !== '') updatedProfile.age = age;
+//     if (phone_number.trim() !== '') updatedProfile.phone_number = phone_number;
+//     if (email.trim() !== '') updatedProfile.email = email;
+
+//     console.log("Sending updated profile data:", updatedProfile);
+
+//     updateProfile(updatedProfile);
+
+
+
+
+
+document.getElementById('addBookForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const name = document.getElementById('bookTitle').value;
+    const author = document.getElementById('bookAuthor').value;
+    const year_published = document.getElementById('year_published').value;
+    const loan_type = document.getElementById('loan_type').value;
+    await addBook(name, author, year_published, loan_type);
+});
+
+document.getElementById('searchBooksForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+    const query = document.getElementById('searchQuery').value;
+    searchBooks(query);
+});
+
+
+document.getElementById('getBooksBtn').addEventListener('click', async () => {
+    await getAllBooks();
+});
+
+document.getElementById('findBookForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const query = document.getElementById('findBookQuery').value;
+    await findBook(query);
+});
+
+        // document.getElementById('searchCustomersForm').addEventListener('submit', function (event) {
+        //     event.preventDefault();
+        //     const query = document.getElementById('searchCustomerQuery').value;
+        //     searchCustomers(query);
+        // });
+
+        // document.getElementById('borrowBookForm').addEventListener('submit', function (event) {
+        //     event.preventDefault();
+        //     const bookId = document.getElementById('bookIdToBorrow').value;
+        //     loanBook(bookId);
+        // });
+
+        // document.getElementById('returnBookForm').addEventListener('submit', function (event) {
+        //     event.preventDefault();
+        //     const bookId = document.getElementById('bookIdToReturn').value;
+        //     returnBook(bookId);
+        // });
+
+        // document.getElementById('updateBookForm').addEventListener('submit', function (event) {
+        //     event.preventDefault();
+        //     const bookId = document.getElementById('bookId').value;
+        //     const title = document.getElementById('updateBookTitle').value;
+        //     const author = document.getElementById('updateBookAuthor').value;
+        //     updateBook(bookId, title, author);
+        // });
+
+
+
+        
+        const showSection = (sectionId) => {
+            const sections = document.querySelectorAll('.container');
+            sections.forEach(section => {
+                if (section.id === sectionId + 'Section') {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+        };
+
+        const registerUser = (username, password, role) => {
+            axios.post(`${MY_SERVER}/register`, { username, password, role })
+                .then(response => {
+                    alert('Registration successful!');
+                    showSection('login');
+                })
+                .catch(error => {
+                    alert('Registration failed: ' + error.response.data.message);
+                });
+        };
+
+        const loginUser = async (username, password) => {
+            try {
+                const response = await axios.post(`${MY_SERVER}/login`, { username, password });
+                
+                // Handle successful login response
+                if (response && response.data && response.data.token && response.data.role) {
+                    localStorage.setItem('token', response.data.token);
+                    localStorage.setItem('role', response.data.role);
+                    localStorage.setItem('username', username); // Store the username
+                    alert('Login successful!');
+                    showSection('home');
+                    document.getElementById('welcomeMessage').innerText = 'Welcome, ' + username;
+                    
+                    // Check and manipulate admin and customer sections if they exist
+                    const adminFunctions = document.getElementById('adminFunctionsSection');
+                    const customerFunctions = document.getElementById('customerFunctionsSection');
+                    
+                    if (adminFunctions && customerFunctions) {
+                        if (response.data.role === 'admin') {
+                            adminFunctions.classList.remove('hidden');
+                            customerFunctions.classList.add('hidden');
+                        } else {
+                            adminFunctions.classList.add('hidden');
+                            customerFunctions.classList.remove('hidden');
+                        }
+                    } else {
+                        throw new Error('Required DOM elements (adminFunctionsSection or customerFunctionsSection) not found');
+                    }
+                } else {
+                    throw new Error('Invalid response from server');
+                }
+            } catch (error) {
+                console.error('Login failed:', error.message);
+                alert('Login failed. Please check your credentials and try again.');
+            }
+        };
+
+const handleLogout = () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('username');
+            document.getElementById('welcomeMessage').innerText = 'Welcome, Guest';
+            showSection('home');
+        };
+
+        const fetchProfileData = () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('You are not logged in.');
+                return;
+            }
+
+            axios.get(`${MY_SERVER}/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(response => {
+                document.getElementById('first_name').value = response.data.first_name || '';
+                document.getElementById('last_name').value = response.data.last_name || '';
+                document.getElementById('city').value = response.data.city || '';
+                document.getElementById('age').value = response.data.age || '';
+                document.getElementById('phone_number').value = response.data.phone_number || '';
+                document.getElementById('email').value = response.data.email || '';
+            })
+            .catch(error => {
+                console.error('Failed to fetch profile data:', error.message);
+                alert('Failed to load profile data.');
+            });
+        };
+
+        const updateProfile = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('You are not logged in.');
+        return;
+    }
+
+    const first_name = document.getElementById('first_name').value;
+    const last_name = document.getElementById('last_name').value;
+    const city = document.getElementById('city').value;
+    const age = document.getElementById('age').value;
+    const phone_number = document.getElementById('phone_number').value;
+    const email = document.getElementById('email').value;
+
+    const data = { first_name, last_name, city, age, phone_number, email };
+
+    axios.put(`${MY_SERVER}/profile`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(response => {
+        alert('Profile updated successfully!');
+        document.getElementById('welcomeMessage').innerText = `Welcome, ${response.data.first_name}`;
+        showSection('home');
+    })
+    .catch(error => {
+        console.error('Failed to update profile:', error.message);
+        alert('Profile update failed.');
+    });
+};
+
+
+// // Function to update welcome message after profile update
+// const updateWelcomeMessage = (firstName) => {
+//     const welcomeMessage = document.getElementById('welcomeMessage');
+//     if (welcomeMessage) {
+//         welcomeMessage.innerText = 'Welcome, ' + (first_name ? first_name : 'Guest');
+//     }
+// };
+
+const addBook = async (name, author, year_published, loan_type) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${MY_SERVER}/add_book`, { name, author, year_published, loan_type }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        alert('Book added successfully!');
+        showSection('books');
+    } catch (error) {
+        alert('Failed to add book: ' + error.message);
+    }
+};
+
+
+const getAllBooks = () => {
+    axios.get(`${MY_SERVER}/books`)
+        .then(response => {
+            const booksTable = document.getElementById('allBooksTable');
+            booksTable.innerHTML = ''; // Clear the table before populating
+            response.data.forEach(book => {
+                const row = booksTable.insertRow();
+                row.insertCell(0).textContent = book.id;
+                row.insertCell(1).textContent = book.name;
+                row.insertCell(2).textContent = book.author;
+                row.insertCell(3).textContent = book.year_published;
+                row.insertCell(4).textContent = book.loan_type;
+                row.insertCell(5).textContent = book.status;
+                row.insertCell(6).textContent = book.active ? 'Yes' : 'No';
+            });
+        })
+        .catch(error => {
+            console.error('Failed to fetch books:', error.message);
+            alert('Failed to load books.');
+        });
+};
+
+        
+
+        const findBook = event => {
+    event.preventDefault();
+    const query = document.getElementById('findBookQuery').value;
+    axios.post(`${MY_SERVER}/find_book`, { query })
+        .then(response => {
+            const findBookResults = document.getElementById('findBookResults');
+            findBookResults.innerHTML = ''; // Clear existing content
+            response.data.forEach(book => {
+                findBookResults.innerHTML += `<p>${book.name} by ${book.author}, Published: ${book.year_published}</p>`;
+            });
+        })
+        .catch(error => console.error('Error finding book:', error));
+};
+
+
+
+
+// // Get all books function
+// const getAllBooks = () => {
+//     axios.get(`${MY_SERVER}/books`)
+//         .then(response => {
+//             const books = response.data.books;
+//             const booksTable = document.getElementById('booksTable');
+
+//             // Clear previous entries to refresh the table content
+//             booksTable.innerHTML = '';
+
+//             // Create table headers
+//             const thead = document.createElement('thead');
+//             const headerRow = document.createElement('tr');
+//             headerRow.innerHTML = `
+//                 <th>ID</th>
+//                 <th>Title</th>
+//                 <th>Author</th>
+//                 <th>Year Published</th>
+//                 <th>Loan Type</th>
+//                 <th>Active</th>
+//                 <th>Status</th>
+//             `;
+//             thead.appendChild(headerRow);
+//             booksTable.appendChild(thead);
+
+//             // Create table body
+//             const tbody = document.createElement('tbody');
+//             books.forEach(book => {
+//                 const bookRow = document.createElement('tr');
+//                 bookRow.innerHTML = `
+//                     <td>${book.id}</td>
+//                     <td>${book.name}</td>
+//                     <td>${book.author}</td>
+//                     <td>${book.year_published}</td>
+//                     <td>${book.loan_type}</td>
+//                     <td>${book.active}</td>
+//                     <td>${book.status}</td>
+//                 `;
+//                 tbody.appendChild(bookRow);
+//             });
+//             booksTable.appendChild(tbody);
+//         })
+//         .catch(error => {
+//             alert('Failed to fetch books: ' + error.response.data.message);
+//         });
+// };
+
+
+        // Get all customers function (Admin only)
+        // function getAllCustomers() {
+        //     axios.get('/customers', {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             const customers = response.data.customers;
+        //             const customersList = document.getElementById('customersList');
+        //             customersList.innerHTML = '';
+        //             customers.forEach(customer => {
+        //                 const customerItem = document.createElement('div');
+        //                 customerItem.innerHTML = `<p>${customer.username} (${customer.role})</p>`;
+        //                 customersList.appendChild(customerItem);
+        //             });
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to fetch customers: ' + error.response.data.message);
+        //         });
+        // }
+
+        // Search books function
+        // function searchBooks(query) {
+        //     axios.post('/find_book', { query }, {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             const books = response.data.books;
+        //             const searchResults = document.getElementById('searchResults');
+        //             searchResults.innerHTML = '';
+        //             books.forEach(book => {
+        //                 const bookItem = document.createElement('div');
+        //                 bookItem.innerHTML = `<p>${book.title} by ${book.author}</p>`;
+        //                 searchResults.appendChild(bookItem);
+        //             });
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to search books: ' + error.response.data.message);
+        //         });
+        // }
+
+        // // Search customers function (Admin only)
+        // function searchCustomers(query) {
+        //     axios.post('/find_customer', { query }, {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             const customers = response.data.customers;
+        //             const searchCustomerResults = document.getElementById('searchCustomerResults');
+        //             searchCustomerResults.innerHTML = '';
+        //             customers.forEach(customer => {
+        //                 const customerItem = document.createElement('div');
+        //                 customerItem.innerHTML = `<p>${customer.username} (${customer.role})</p>`;
+        //                 searchCustomerResults.appendChild(customerItem);
+        //             });
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to search customers: ' + error.response.data.message);
+        //         });
+        // }
+
+        // // Update book function (Admin only)
+        // function updateBook(bookId, title, author) {
+        //     axios.put(`/update_book/${bookId}`, { title, author }, {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             alert('Book updated successfully!');
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to update book: ' + error.response.data.message);
+        //         });
+        // }
+
+        // Loan book function (Customer only)
+        // function loanBook(bookId) {
+        //     axios.post('/loan_book', { bookId }, {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             alert('Book borrowed successfully!');
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to borrow book: ' + error.response.data.message);
+        //         });
+        // }
+
+        // Return book function (Customer only)
+        // function returnBook(bookId) {
+        //     axios.post('/return_book', { bookId }, {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             alert('Book returned successfully!');
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to return book: ' + error.response.data.message);
+        //         });
+        // }
+
+        // Get current loans function
+        // function getCurrentLoans() {
+        //     axios.get('/loans', {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             const loans = response.data.loans;
+        //             const loansList = document.getElementById('loansList');
+        //             loansList.innerHTML = '';
+        //             loans.forEach(loan => {
+        //                 const loanItem = document.createElement('div');
+        //                 loanItem.innerHTML = `<p>Book ID: ${loan.book_id}, Due Date: ${loan.due_date}</p>`;
+        //                 loansList.appendChild(loanItem);
+        //             });
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to fetch current loans: ' + error.response.data.message);
+        //         });
+        // }
+
+        // Get loan history function
+        // function getLoanHistory() {
+        //     axios.get('/loan_his', {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             const loans = response.data.loans;
+        //             const loanHistoryList = document.getElementById('loanHistoryList');
+        //             loanHistoryList.innerHTML = '';
+        //             loans.forEach(loan => {
+        //                 const loanItem = document.createElement('div');
+        //                 loanItem.innerHTML = `<p>Book ID: ${loan.book_id}, Returned On: ${loan.return_date}</p>`;
+        //                 loanHistoryList.appendChild(loanItem);
+        //             });
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to fetch loan history: ' + error.response.data.message);
+        //         });
+        // }
+
+        // Get late loans function (Admin only)
+        // function getLateLoans() {
+        //     axios.get('/late_loans', {
+        //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        //     })
+        //         .then(response => {
+        //             const lateLoans = response.data.late_loans;
+        //             const lateLoansList = document.getElementById('lateLoansList');
+        //             lateLoansList.innerHTML = '';
+        //             lateLoans.forEach(loan => {
+        //                 const loanItem = document.createElement('div');
+        //                 loanItem.innerHTML = `<p>Book ID: ${loan.book_id}, Due Date: ${loan.due_date}, Returned On: ${loan.return_date}</p>`;
+        //                 lateLoansList.appendChild(loanItem);
+        //             });
+        //         })
+        //         .catch(error => {
+        //             alert('Failed to fetch late loans: ' + error.response.data.message);
+        //         });
+        // }
+    </script>
+</body>
+</html>

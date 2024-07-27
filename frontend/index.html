@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-image: url('../media/background_pic/library2.jpg'); /* Ensure the path is correct */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .navbar {
+            overflow: hidden;
+            background-color: #333;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .navbar a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+        }
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .container {
+            padding: 20px;
+            margin-top: 60px; /* Add a top margin to avoid content overlay */
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+        }
+        input {
+            margin-bottom: 10px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .table-container {
+            width: 100%;
+            overflow-x: auto; /* Horizontal scroll if needed */
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="#" onclick="showForm('registerForm')">Register</a></li>
+            <li><a href="#" onclick="showForm('loginForm')">Login</a></li>
+            <li><a href="#" onclick="logout()">Logout</a></li>
+            <li><a href="#" onclick="showForm('profileForm')">Profile</a></li>
+            <li><a href="#" onclick="showForm('addBookForm')">Add Book</a></li>
+            <li><a href="#" onclick="getBooks()">Books</a></li>
+            <li><a href="#" onclick="showForm('findBookForm')">Find Book</a></li>
+            <li><a href="#" onclick="getCustomers()">Customers</a></li>
+            <li><a href="#" onclick="showForm('toggleCustomerForm')">Toggle Customer</a></li>
+            <li><a href="#" onclick="showForm('toggleBookForm')">Toggle Book</a></li>
+            <li><a href="#" onclick="showForm('updateBookForm')">Update Book</a></li>
+            <li><a href="#" onclick="showForm('findCustomerForm')">Find Customer</a></li>
+            <li><a href="#" onclick="showForm('loanBookForm')">Loan Book</a></li>
+            <li><a href="#" onclick="showForm('returnBookForm')">Return Book</a></li>
+            <li><a href="#" onclick="getLoans()">Loans</a></li>
+            <li><a href="#" onclick="getLoanHistory()">Loan History</a></li>
+            <li><a href="#" onclick="getLateLoans()">Late Loans</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div id="registerDiv" class="form-container">
+            <form id="registerForm" onsubmit="register(event)" autocomplete="off">
+                <h2>Register</h2>
+                <label for="registerUsername">Username:</label>
+                <input type="text" id="registerUsername" name="username" required autocomplete="off"><br>
+                <label for="registerPassword">Password:</label>
+                <input type="password" id="registerPassword" name="password" required autocomplete="off"><br>
+                <label for="registerRole">Role:</label>
+                <select id="registerRole" name="role" required>
+                    <option value="admin">Admin</option>
+                    <option value="customer">Customer</option>
+                </select><br>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+    
+        <div id="loginDiv" class="form-container">
+            <form id="loginForm" onsubmit="login(event)" autocomplete="off">
+                <h2>Login</h2>
+                <label for="loginUsername">Username:</label>
+                <input type="text" id="loginUsername" name="username" required autocomplete="off"><br>
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" name="password" required autocomplete="off"><br>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+
+        <div id="logoutDiv" class="form-container">
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <div id="profileDiv" class="form-container">
+            <form id="profileForm" onsubmit="updateProfile(event)">
+                <h2>Profile</h2>
+                <label for="profileFirstName">First Name:</label>
+                <input type="text" id="profileFirstName" name="first_name" placeholder="John Doe"><br>
+                <label for="profileLastName">Last Name:</label>
+                <input type="text" id="profileLastName" name="last_name"><br>
+                <label for="profilePhoneNumber">Phone Number:</label>
+                <input type="tel" id="profilePhoneNumber" name="phone_number" pattern="[0-9]*" inputmode="numeric"><br>
+                <label for="profileEmail">Email:</label>
+                <input type="email" id="profileEmail" name="email"><br>
+                <label for="profileAge">Age:</label>
+                <input type="number" id="profileAge" name="age"><br>
+                <label for="profileCity">City:</label>
+                <input type="text" id="profileCity" name="city"><br>
+                <button type="submit">Update Profile</button>
+            </form>
+        </div>
+
+        <div id="addBookDiv" class="form-container">
+            <form id="addBookForm" onsubmit="addBook(event)">
+                <h2>Add Book</h2>
+                <label for="bookName">Book Name:</label>
+                <input type="text" id="bookName" name="name" autocomplete="off" required><br>
+                <label for="bookAuthor">Author:</label>
+                <input type="text" id="bookAuthor" name="author" autocomplete="off" required><br>
+                <label for="bookYearPublished">Year Published:</label>
+                <input type="number" id="bookYearPublished" name="year_published" autocomplete="off" required><br>
+                <label for="bookLoanType">Loan Type:</label>
+                <select id="bookLoanType" name="loan_type" title="Loan Type" required>
+                    <option value="1">10 days</option>
+                    <option value="2">5 days</option>
+                    <option value="3">2 days</option>
+                    <option value="4">5 minutes</option>
+                </select><br>
+                <button type="submit">Add Book</button>
+            </form>
+        </div>
+
+        <div id="getBooksDiv" class="form-container">
+            <h2>Get All Books</h2>
+            <form id="getBooksForm">
+                <button type="submit">Get Books</button>
+            </form>
+            <div id="booksDisplay" class="table-container"></div>
+        </div>
+
+        <div id="findBookDiv" class="form-container">
+            <form id="findBookForm" onsubmit="findBook(event)">
+                <h2>Find Book</h2>
+                <label for="findBookName">Book Name:</label>
+                <input type="text" id="findBookName" name="name"><br>
+                <label for="findBookAuthor">Author:</label>
+                <input type="text" id="findBookAuthor" name="author"><br>
+                <button type="submit">Find Book</button>
+            </form>
+            <div id="findBookResults"></div>
+        </div>
+
+        <div id="updateBookDiv" class="form-container">
+            <h2>Update Book</h2>
+            <form id="updateBookForm" onsubmit="updateBook(event)">
+                <input type="number" id="updateBookId" placeholder="Book ID" required>
+                <input type="text" id="updateBookName" placeholder="Book Name" autocomplete="off">
+                <input type="text" id="updateBookAuthor" placeholder="Author" autocomplete="off">
+                <input type="number" id="updateBookYearPublished" placeholder="Year Published" autocomplete="off">
+                <select id="updateBookLoanType" title="Loan Type">
+                    <option value="">Select Loan Type</option>
+                    <option value="1">10 days</option>
+                    <option value="2">5 days</option>
+                    <option value="3">2 days</option>
+                    <option value="4">5 minutes</option>
+                </select>
+                <button type="submit">Update Book</button>
+            </form>
+        </div>
+
+        <!-- <div id="toggleBookDiv" class="form-container">
+            <form id="toggleBookForm" onsubmit="toggleBook(event)">
+                <h2>Toggle Book</h2>
+                <label for="toggleBookId">Book ID:</label>
+                <input type="number" id="toggleBookId" name="book_id" autocomplete="off" required><br>
+                <button type="submit">Toggle Book</button>
+            </form>
+        </div> -->
+
+        <div id="getCustomersDiv" class="form-container">
+            <h2>Get All Customers</h2>
+            <form id="getCustomersForm" onsubmit="getCustomers(event)">
+                <button type="submit">Get Customers</button>
+            </form>
+            <div id="customersDisplay" class="table-container"></div>
+        </div>
+
+        <div id="findCustomerDiv" class="form-container">
+            <form id="findCustomerForm" onsubmit="findCustomer(event)">
+                <h2>Find Customer</h2>
+                <label for="findCustomerFirstName">First Name:</label>
+                <input type="text" id="findCustomerFirstName" name="first_name"><br>
+                <label for="findCustomerLastName">Last Name:</label>
+                <input type="text" id="findCustomerLastName" name="last_name"><br>
+                <button type="submit">Find Customer</button>
+            </form>
+            <div id="findCustomerDisplay" class="table-container"></div>
+        </div>
+
+        <!-- <div id="toggleCustomerForm" class="form-container">
+            <form id="toggleCustomerForm" onsubmit="toggleCustomer(event)">
+                <h2>Toggle Customer</h2>
+                <label for="toggleCustomerId">Customer ID:</label>
+                <input type="number" id="toggleCustomerId" name="customer_id" autocomplete="off" required><br>
+                <button type="submit">Toggle Customer</button>
+            </form>
+        </div>      -->
+
+        <!-- <div id="loanBookDiv" class="form-container">
+            <h2>Loan Book</h2>
+            <form id="loanBookForm" onsubmit="loanBook(event)">
+                <label for="loanBookId">Book ID:</label>
+                <input type="number" id="loanBookId" name="book_id" placeholder="Book ID" required>
+                <button type="submit">Loan Book</button>
+            </form>
+            <div id="loanBookResult"></div>
+        </div> -->
+
+        <!-- <div id="returnBookDiv" class="form-container">
+            <h2>Return Book</h2>
+            <form id="returnBookForm" onsubmit="returnBook(event)">
+                <label for="returnBookId">Book ID:</label>
+                <input type="number" id="returnBookId" name="book_id" placeholder="Book ID" required>
+                <button type="submit">Return Book</button>
+            </form>
+            <div id="returnBookResult"></div>
+        </div> -->
+
+        <div id="getLoansDiv" class="form-container">
+            <h2>Get Active Loans</h2>
+            <button onclick="getLoans()">Get Loans</button>
+            <div id="loansDisplay" class="table-container"></div>
+        </div>
+
+        <div id="getLoanHistoryDiv" class="form-container">
+            <h2>Get Loan History</h2>
+            <button onclick="getLoanHistory()">Get Loan History</button>
+            <div id="loanHistoryDisplay" class="table-container"></div>
+        </div>
+
+        <div id="getLateLoansDiv" class="form-container">
+            <h2>Get Late Loans</h2>
+            <button onclick="getLateLoans()">Get Late Loans</button>
+            <div id="lateLoansDisplay" class="table-container"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const MY_SERVER = "http://127.0.0.1:5000";
+
+        // Function Definitions
+        
+        const showForm = (formId) => {
+            document.querySelectorAll('.form-container').forEach(form => form.style.display = 'none');
+            document.getElementById(formId).style.display = 'block';
+        };
+
+        const register = async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const role = document.getElementById('registerRole').value;
+
+            try {
+                const response = await axios.post(`${MY_SERVER}/register`, { username, password, role });
+                console.log('Registered successfully');
+            } catch (error) {
+                console.log(error.response.data.message);
+            }
+        };
+
+        const login = async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await axios.post(`${MY_SERVER}/login`, { username, password });
+                const { token, role } = response.data;
+                localStorage.setItem('token', token);
+                localStorage.setItem('username', username);
+                localStorage.setItem('role', role);
+                console.log(`Username: ${username}, Role: ${role}, Token: ${token}`);
+                console.log('Logged in successfully');
+            } catch (error) {
+                console.log(error.response.data.message);
+            }
+        };
+
+        const logout = () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            console.log('Logged out');
+        };
+
+        const updateProfile = async (event) => {
+            event.preventDefault();
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('You must be logged in to update profile');
+                return;
+            }
+            
+            // Fetch existing profile data
+            const existingProfile = await axios.get(`${MY_SERVER}/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).then(response => response.data).catch(() => ({}));
+
+            const first_name = document.getElementById('profileFirstName').value || existingProfile.first_name || 'Guest';
+            const last_name = document.getElementById('profileLastName').value || existingProfile.last_name || '';
+            const phone_number = document.getElementById('profilePhoneNumber').value || existingProfile.phone_number || '';
+            const email = document.getElementById('profileEmail').value || existingProfile.email || '';
+            const age = document.getElementById('profileAge').value || existingProfile.age || '';
+            const city = document.getElementById('profileCity').value || existingProfile.city || '';
+
+            try {
+                const response = await axios.put(`${MY_SERVER}/profile`, {
+                    first_name, last_name, phone_number, email, age, city
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                console.log(response.data.message);
+            } catch (error) {
+                console.log(error.response.data.message);
+            }
+        };
+
+        const addBook = async (event) => {
+            event.preventDefault();
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+            if (!token) {
+                console.log('You must be logged in to add a book');
+                return;
+            }
+            if (role !== 'admin') {
+                console.log('Only admins can add books');
+                return;
+            }
+            const name = document.getElementById('bookName').value;
+            const author = document.getElementById('bookAuthor').value;
+            const year_published = document.getElementById('bookYearPublished').value;
+            const loan_type = document.getElementById('bookLoanType').value;
+
+            try {
+                const response = await axios.post(`${MY_SERVER}/add_book`, {
+                    name, author, year_published, loan_type
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                console.log(`Book Name: ${name}, Author: ${author}, Year Published: ${year_published}, Loan Type: ${loan_type}`);
+                console.log(response.data.message);
+            } catch (error) {
+                console.log(error.response.data.message);
+            }
+        };
+
+const loanTypeMapping = {
+            1: "10 days",
+            2: "5 days",
+            3: "2 days",
+            4: "5 minutes"
+        };
+
+        const getBooks = async () => {
+            try {
+                const response = await axios.get(`${MY_SERVER}/books`);
+                const books = response.data;
+                displayBooks(books);
+            } catch (error) {
+                console.log(error.response.data.message);
+            }
+        };
+
+        const displayBooks = (books) => {
+    const booksDisplay = document.getElementById('booksDisplay');
+    booksDisplay.innerHTML = ''; // Clear previous display
+    const userRole = localStorage.getItem('role'); // Get the user role from local storage
+
+    if (books.length === 0) {
+        booksDisplay.innerHTML = '<p>No books available</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+    const headers = ['ID', 'Name', 'Author', 'Year Published', 'Loan Type', 
+        'Active', 'Status', 'Toggle Book', 'Loan Book', 'Return Book'];
+
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    books.forEach(book => {
+        const row = document.createElement('tr');
+        const fields = [book.id, book.name, book.author, book.year_published, book.loan_type,
+            book.active === 'active' ? 'Yes' : 'No', book.status];
+
+        fields.forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = field;
+            row.appendChild(td);
+        });
+
+        // Toggle book status button
+        const toggleTd = document.createElement('td');
+        const toggleButton = document.createElement('button');
+        toggleButton.textContent = book.active === 'active' ? 'Deactivate' : 'Activate';
+        toggleButton.onclick = () => toggleBook(book.id);
+        toggleTd.appendChild(toggleButton);
+        row.appendChild(toggleTd);
+
+        // Loan book button
+        const loanTd = document.createElement('td');
+        const loanButton = document.createElement('button');
+        loanButton.textContent = 'Loan';
+        loanButton.disabled = book.status !== 'available' || book.active !== 'active' || userRole !== 'customer';
+        loanButton.onclick = () => loanBook(book.id);
+        loanTd.appendChild(loanButton);
+        row.appendChild(loanTd);
+
+        // Return book button
+        const returnTd = document.createElement('td');
+        const returnButton = document.createElement('button');
+        returnButton.textContent = 'Return';
+        // Include check for 'active' status
+        returnButton.disabled = book.status === 'available' || book.active !== 'active' || userRole !== 'customer';
+        returnButton.onclick = () => returnBook(book.id);
+        returnTd.appendChild(returnButton);
+        row.appendChild(returnTd);
+
+        table.appendChild(row);
+        });
+
+        booksDisplay.appendChild(table);
+};
+
+        const findBook = async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('findBookName').value;
+            const author = document.getElementById('findBookAuthor').value;
+
+            try {
+                const response = await axios.get(`${MY_SERVER}/find_book`, {
+                    params: { name, author }
+                });
+                console.log(response.data); // Log the found books to the console
+                displayFoundBooks(response.data); // Function to display found books
+            } catch (error) {
+                console.log('Failed to find book:', error.response.data.message);
+            }
+        };
+
+        const displayFoundBooks = (books) => {
+            const findBookResults = document.getElementById('findBookResults');
+            findBookResults.innerHTML = ''; // Clear previous results
+
+            if (books.length === 0) {
+                findBookResults.innerHTML = '<p>No books found</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            const headerRow = document.createElement('tr');
+
+            const headers = ['ID', 'Name', 'Author', 'Year Published', 'Loan Type', 'Active', 'Status'];
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            books.forEach(book => {
+                const row = document.createElement('tr');
+                const fields = [
+                    book.id,
+                    book.name,
+                    book.author,
+                    book.year_published,
+                    loanTypeMapping[book.loan_type] || book.loan_type,
+                    book.active,
+                    book.status
+                ];
+
+                fields.forEach(field => {
+                    const td = document.createElement('td');
+                    td.textContent = field;
+                    row.appendChild(td);
+                });
+
+                table.appendChild(row);
+            });
+
+            findBookResults.appendChild(table);
+        };
+
+const updateBook = async (event) => {
+    event.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in as admin to update book');
+        return;
+    }
+    const id = document.getElementById('updateBookId').value;
+
+    // Fetch existing book data
+    const existingBook = await axios.get(`${MY_SERVER}/book/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    }).then(response => response.data).catch(() => ({}));
+
+    const name = document.getElementById('updateBookName').value || existingBook.name;
+    const author = document.getElementById('updateBookAuthor').value || existingBook.author;
+    const year_published = document.getElementById('updateBookYearPublished').value || existingBook.year_published;
+    const loan_type = document.getElementById('updateBookLoanType').value || existingBook.loan_type;
+
+    // Create a data object
+    const data = { name, author, year_published, loan_type };
+
+    try {
+        const response = await axios.put(`${MY_SERVER}/update_book/${id}`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log(`Book "${response.data.name}" updated successfully.`);
+    } catch (error) {
+        console.log(error.response.data.message);
+    }
+};
+
+const toggleBook = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('You must be logged in as admin to toggle book');
+        return;
+    }
+    try {
+        const response = await axios.post(`${MY_SERVER}/toggle_book/${id}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const book = response.data;
+        const statusMessage = book.active === 'active' ? 'active' : 'inactive';
+        const message = `Book "${book.name}" toggled successfully and is now ${statusMessage}`;
+
+        alert(message);
+        await getBooks(); // Refresh the book list to show updated status
+    } catch (error) {
+        if (error.response && error.response.data && error.response.data.message) {
+            alert(error.response.data.message);
+        } else {
+            alert('An unexpected error occurred');
+        }
+    }
+};
+
+const getCustomers = async (event) => {
+    event?.preventDefault(); // Prevent default behavior if event is provided
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in as admin to view customers');
+        return;
+    }
+    try {
+        const response = await axios.get(`${MY_SERVER}/customers`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        displayCustomers(response.data);
+    } catch (error) {
+        console.log(error.response?.data?.message || 'An error occurred');
+    }
+};
+
+const displayCustomers = (customers) => {
+    const customersDisplay = document.getElementById('customersDisplay');
+    customersDisplay.innerHTML = ''; // Clear previous display
+
+    if (customers.length === 0) {
+        customersDisplay.innerHTML = '<p>No customers available</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+
+    const headers = [
+        'ID', 'First Name', 'Last Name', 'City', 'Age', 
+        'Phone Number', 'Email', 'Role', 'Active', 'Toggle Customer'
+    ];
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    customers.forEach(customer => {
+        const row = document.createElement('tr');
+        const fields = [
+            customer.id,
+            customer.first_name,
+            customer.last_name,
+            customer.city,
+            customer.age,
+            customer.phone_number,
+            customer.email,
+            customer.role,
+            customer.active === 'active' ? 'Yes' : 'No' // Ensure correct display
+        ];
+
+        fields.forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = field;
+            row.appendChild(td);
+        });
+
+        // Create and append the toggle button
+        const toggleTd = document.createElement('td');
+        const toggleButton = document.createElement('button');
+        toggleButton.textContent = customer.active === 'active' ? 'Deactivate' : 'Activate';
+        toggleButton.onclick = async () => {
+            await toggleCustomer(customer.id); // Toggle the customer status
+            await getCustomers(); // Refresh the customer list
+        };
+        toggleTd.appendChild(toggleButton);
+        row.appendChild(toggleTd);
+
+        table.appendChild(row);
+    });
+
+    customersDisplay.appendChild(table);
+};
+
+const findCustomer = async (event) => {
+    event.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in as admin to find customers');
+        return;
+    }
+    const first_name = document.getElementById('findCustomerFirstName').value;
+    const last_name = document.getElementById('findCustomerLastName').value;
+    try {
+        const response = await axios.get(`${MY_SERVER}/find_customer`, {
+            params: { first_name, last_name },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('Customers found:', response.data); // Logging the response
+        displayCustomers2(response.data);
+    } catch (error) {
+        console.log(error.response.data.message);
+    }
+};
+
+const displayCustomers2 = (customers) => {
+    const customersDisplay = document.getElementById('findCustomerDisplay');
+    customersDisplay.innerHTML = ''; // Clear previous display
+
+    if (customers.length === 0) {
+        customersDisplay.innerHTML = '<p>No customers found</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+
+    const headers = [
+        'ID', 'First Name', 'Last Name', 'City', 'Age', 
+        'Phone Number', 'Email', 'Role', 'Active'
+    ];
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    customers.forEach(customer => {
+        const row = document.createElement('tr');
+        const fields = [
+            customer.id,
+            customer.first_name,
+            customer.last_name,
+            customer.city,
+            customer.age,
+            customer.phone_number,
+            customer.email,
+            customer.role,
+            customer.active
+        ];
+
+        fields.forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = field;
+            row.appendChild(td);
+        });
+
+        table.appendChild(row);
+    });
+
+    customersDisplay.appendChild(table);
+};
+
+const toggleCustomer = async (id, button) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('You must be logged in as admin to toggle customer');
+        return;
+    }
+    try {
+        // Perform the toggle operation
+        await axios.post(`${MY_SERVER}/toggle_customer/${id}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Debug log
+        console.log('Toggle successful, refreshing customer list...');
+
+        // After successful toggle, refresh the customer list
+        const response = await axios.get(`${MY_SERVER}/customers`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        displayCustomers(response.data);
+
+        // Update the button text after the list is refreshed
+        button.textContent = button.textContent === 'Activate' ? 'Deactivate' : 'Activate';
+
+        alert('Customer toggled successfully');
+    } catch (error) {
+        if (error.response && error.response.data && error.response.data.message) {
+            alert(error.response.data.message);
+        } else {
+            alert('An unexpected error occurred');
+        }
+    }
+};
+
+        
+const getLoans = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in to view loans');
+        return;
+    }
+    try {
+        const response = await axios.get(`${MY_SERVER}/loans`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        displayLoans(response.data.active_loans);
+    } catch (error) {
+        console.log(error.response.data.message);
+    }
+};
+
+const displayLoans = (loans) => {
+    const loansDisplay = document.getElementById('loansDisplay');
+    loansDisplay.innerHTML = ''; // Clear previous display
+
+    if (loans.length === 0) {
+        loansDisplay.innerHTML = '<p>No active loans found</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+
+    const headers = [
+        'Loan ID', 'Book ID', 'Book Name', 'Loan Date', 'Return Date', 'Is Late', 'Username', 'First Name', 'Last Name'
+    ];
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    loans.forEach(loan => {
+        const row = document.createElement('tr');
+        const fields = [
+            loan.loan_id,
+            loan.book_id,
+            loan.book_name,
+            loan.loan_date,
+            loan.return_date,
+            loan.is_late ? 'Yes' : 'No',
+            loan.username || '',
+            loan.first_name || '',
+            loan.last_name || ''
+        ];
+
+        fields.forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = field;
+            row.appendChild(td);
+        });
+
+        table.appendChild(row);
+    });
+
+    loansDisplay.appendChild(table);
+};
+
+const getLoanHistory = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in to view loan history');
+        return;
+    }
+    try {
+        const response = await axios.get(`${MY_SERVER}/loan_his`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        displayLoanHistory(response.data.loan_history);
+    } catch (error) {
+        console.log(error.response.data.message);
+    }
+};
+
+const displayLoanHistory = (loanHistory) => {
+    const loanHistoryDisplay = document.getElementById('loanHistoryDisplay');
+    loanHistoryDisplay.innerHTML = ''; // Clear previous display
+
+    if (loanHistory.length === 0) {
+        loanHistoryDisplay.innerHTML = '<p>No loan history found</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+
+    const headers = [
+        'Loan ID', 'Book ID', 'Book Name', 'Loan Date', 'Return Date', 
+        'Actual Return Date', 'Username', 'First Name', 'Last Name'
+    ];
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    loanHistory.forEach(loan => {
+        const row = document.createElement('tr');
+        const fields = [
+            loan.loan_id,
+            loan.book_id,
+            loan.book_name,
+            loan.loan_date,
+            loan.return_date,
+            loan.actual_return_date,
+            loan.username || '',
+            loan.first_name || '',
+            loan.last_name || ''
+        ];
+
+        fields.forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = field;
+            row.appendChild(td);
+        });
+
+        table.appendChild(row);
+    });
+
+    loanHistoryDisplay.appendChild(table);
+};
+
+const getLateLoans = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in as an admin to view late loans');
+        return;
+    }
+    try {
+        const response = await axios.get(`${MY_SERVER}/late_loans`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        displayLateLoans(response.data);
+    } catch (error) {
+        console.log(error.response.data.message);
+    }
+};
+
+const displayLateLoans = (lateLoans) => {
+    const lateLoansDisplay = document.getElementById('lateLoansDisplay');
+    lateLoansDisplay.innerHTML = ''; // Clear previous display
+
+    if (lateLoans.length === 0) {
+        lateLoansDisplay.innerHTML = '<p>No late loans found</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+
+    const headers = [
+        'Loan ID', 'Book ID', 'Book Name', 'Loan Date', 'Return Date', 
+        'Actual Return Date', 'Username', 'First Name', 'Last Name'
+    ];
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    lateLoans.forEach(loan => {
+        const row = document.createElement('tr');
+        const fields = [
+            loan.id,
+            loan.book_id,
+            loan.book_name,
+            loan.loan_date,
+            loan.return_date,
+            loan.actual_return_date,
+            loan.username || '',
+            loan.first_name || '',
+            loan.last_name || ''
+        ];
+
+        fields.forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = field;
+            row.appendChild(td);
+        });
+
+        table.appendChild(row);
+    });
+
+    lateLoansDisplay.appendChild(table);
+};
+
+const loanBook = async (bookId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in as a customer to loan a book');
+        return;
+    }
+
+    try {
+        const response = await axios.post(`${MY_SERVER}/loan_book`, { book_id: bookId }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        console.log(`Book loaned successfully: ${response.data.book_name}`);
+        await getBooks(); // Refresh the books display to reflect changes
+    } catch (error) {
+        console.log(error.response.data.message);
+    }
+};
+
+const displayLoanBookResult = (result) => {
+    const loanBookResult = document.getElementById('loanBookResult');
+    loanBookResult.innerHTML = ''; // Clear previous result
+
+    if (result.loan_id) {
+        loanBookResult.innerHTML = `
+            <p>Book loaned successfully:</p>
+            <p>Loan ID: ${result.loan_id}</p>
+            <p>Book Name: ${result.book_name}</p>
+            <p>Loan Date: ${result.loan_date}</p>
+            <p>Return Date: ${result.return_date}</p>
+        `;
+    } else {
+        loanBookResult.innerHTML = `<p>${result.message}</p>`;
+    }
+};
+
+const returnBook = async (bookId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('You must be logged in as a customer to return a book');
+        return;
+    }
+
+    try {
+        const response = await axios.post(`${MY_SERVER}/return_book`, { book_id: bookId }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        console.log(`Book returned successfully: ${response.data.book_name}`);
+        await getBooks(); // Refresh the books display to reflect changes
+    } catch (error) {
+        console.log(error.response.data.message);
+    }
+};
+
+const displayReturnBookResult = (result) => {
+    const returnBookResult = document.getElementById('returnBookResult');
+    returnBookResult.innerHTML = ''; // Clear previous result
+
+    if (result.loan_id) {
+        returnBookResult.innerHTML = `
+            <p>Book returned successfully:</p>
+            <p>Loan ID: ${result.loan_id}</p>
+            <p>Book Name: ${result.book_name}</p>
+            <p>Loan Date: ${result.loan_date}</p>
+            <p>Return Date: ${result.return_date}</p>
+            <p>Actual Return Date: ${result.actual_return_date}</p>
+            <p>Late Days: ${result.late_days || 'None'}</p>
+        `;
+    } else {
+        returnBookResult.innerHTML = `<p>${result.message}</p>`;
+    }
+};
+
+
+        // Set up event listeners
+    window.onload = () => {
+    document.getElementById('getCustomersForm').addEventListener('submit', getCustomers);
+    // Add more event listeners if needed
+
+    document.getElementById('getBooksForm').addEventListener('submit', (event) => {
+    event.preventDefault(); // This prevents the form from causing the page to reload
+    getBooks();
+});
+
+
+
+
+
+};
+
+
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Library Management System</title>
+    <!-- Include Axios library for making HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        /* CSS styles for better appearance */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+        }
+
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .block {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .block h2 {
+            margin-top: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#" onclick="showRegister()">Register</a></li>
+                <li><a href="#" onclick="showLogin()">Login</a></li>
+                <li><a href="#" onclick="logoutUser()">Logout</a></li>
+                <li><a href="#" onclick="showProfile()">Profile</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="content">
+
+        <div class="block">
+            <h2>Authentication</h2>
+            <div id="authSection">
+                <label for="username">User:</label>
+                <input id="username" name="username" placeholder="Enter your username" autocomplete="off" title="Username"><br>
+
+                <label for="password">Password:</label>
+                <input id="password" name="password" type="password" placeholder="Enter your password" autocomplete="off" title="Password"><br>
+
+                <label for="role">Role:</label>
+                <select id="role" name="role">
+                    <option value="customer" selected>Customer</option>
+                    <option value="admin">Admin</option>
+                </select><br>
+
+                <button onclick="registerUser()">Register</button>
+                <button onclick="loginUser()">Login</button>
+            </div>
+        </div>
+
+        <div class="block">
+            <h2>Books</h2>
+            <button onclick="viewBooks()">View Books</button>
+            <div id="booksList"></div>
+        </div>
+
+        <div class="block">
+            <h2>Loans</h2>
+            <button onclick="viewLoans()">View Loans</button>
+            <div id="loansList"></div>
+        </div>
+
+        <div class="block">
+            <h2>Admin Actions</h2>
+            <button onclick="showAddBook()">Add Book</button>
+            <button onclick="showUpdateBook()">Update Book</button>
+            <button onclick="showToggleBook()">Toggle Book</button>
+            <div id="adminActions"></div>
+        </div>
+
+        <div class="block">
+            <h2>Customers</h2>
+            <button onclick="viewCustomers()">View Customers</button>
+            <div id="customersList"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const SERVER_URL = "http://127.0.0.1:5000";
+
+        const registerUser = () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+
+            axios.post(`${SERVER_URL}/register`, { username, password, role })
+                .then(response => {
+                    console.log(response.data.message);
+                })
+                .catch(error => {
+                    console.error('Error registering user:', error);
+                });
+        };
+
+        const loginUser = () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            axios.post(`${SERVER_URL}/login`, { username, password })
+                .then(response => {
+                    console.log(response.data);
+                    sessionStorage.setItem('access_token', response.data.access_token);
+
+                    if (response.data && 'role' in response.data) {
+                        sessionStorage.setItem('user_role', response.data.role);
+                    } else {
+                        console.error('Error logging in: User role not found in response data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error logging in:', error);
+                });
+        };
+
+        const logoutUser = () => {
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('user_role');
+            console.log('User logged out');
+        };
+
+        const getAuthHeaders = () => {
+            const token = sessionStorage.getItem('access_token');
+            if (token) {
+                return { 'Authorization': `Bearer ${token}` };
+            }
+            return {};
+        };
+
+        const viewBooks = () => {
+            axios.get(`${SERVER_URL}/books`, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log(response.data);
+                    const booksList = document.getElementById('booksList');
+                    booksList.innerHTML = '';
+                    response.data.forEach(book => {
+                        const bookItem = document.createElement('div');
+                        bookItem.innerHTML = `
+                            <p>Title: ${book.title}</p>
+                            <p>Author: ${book.author}</p>
+                            <button onclick="loanBook(${book.id})">Loan Book</button>
+                            <button onclick="returnBook(${book.id})" style="display:none;">Return Book</button>
+                        `;
+                        booksList.appendChild(bookItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching books:', error);
+                });
+        };
+
+        const viewLoans = () => {
+            axios.get(`${SERVER_URL}/loans`, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log(response.data);
+                    const loansList = document.getElementById('loansList');
+                    loansList.innerHTML = '';
+                    response.data.forEach(loan => {
+                        const loanItem = document.createElement('div');
+                        loanItem.innerHTML = `
+                            <p>Book ID: ${loan.book_id}</p>
+                            <p>User ID: ${loan.user_id}</p>
+                            <p>Loan Date: ${loan.loan_date}</p>
+                        `;
+                        loansList.appendChild(loanItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching loans:', error);
+                });
+        };
+
+        const showProfile = () => {
+            const userRole = sessionStorage.getItem('user_role');
+            const authHeaders = getAuthHeaders();
+            axios.get(`${SERVER_URL}/profile`, { headers: authHeaders })
+                .then(response => {
+                    const userProfile = response.data;
+                    const adminActions = document.getElementById('adminActions');
+                    adminActions.innerHTML = `
+                        <p>Username: ${userProfile.username}</p>
+                        <p>Role: ${userProfile.role}</p>
+                        <p>First Name: ${userProfile.first_name || ''}</p>
+                        <p>Last Name: ${userProfile.last_name || ''}</p>
+                        <p>Phone Number: ${userProfile.phone_number || ''}</p>
+                        <p>Email: ${userProfile.email || ''}</p>
+                        <button onclick="editProfile()">Edit Profile</button>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching profile:', error);
+                });
+        };
+
+        const showAddBook = () => {
+            const adminActions = document.getElementById('adminActions');
+            adminActions.innerHTML = `
+                <h3>Add a New Book</h3>
+                <label for="bookTitle">Title:</label>
+                <input id="bookTitle" name="bookTitle" placeholder="Enter book title"><br>
+                <label for="bookAuthor">Author:</label>
+                <input id="bookAuthor" name="bookAuthor" placeholder="Enter book author"><br>
+                <button onclick="addBook()">Add Book</button>
+            `;
+        };
+
+        const showUpdateBook = () => {
+            const adminActions = document.getElementById('adminActions');
+            adminActions.innerHTML = `
+                <h3>Update an Existing Book</h3>
+                <label for="bookId">Book ID:</label>
+                <input id="bookId" name="bookId" placeholder="Enter book ID"><br>
+                <label for="newTitle">New Title:</label>
+                <input id="newTitle" name="newTitle" placeholder="Enter new title"><br>
+                <label for="newAuthor">New Author:</label>
+                <input id="newAuthor" name="newAuthor" placeholder="Enter new author"><br>
+                <button onclick="updateBook()">Update Book</button>
+            `;
+        };
+
+        const showToggleBook = () => {
+            const adminActions = document.getElementById('adminActions');
+            adminActions.innerHTML = `
+                <h3>Toggle Book Status</h3>
+                <label for="toggleBookId">Book ID:</label>
+                <input id="toggleBookId" name="toggleBookId" placeholder="Enter book ID"><br>
+                <button onclick="toggleBook()">Toggle Book Status</button>
+            `;
+        };
+
+        const viewCustomers = () => {
+            axios.get(`${SERVER_URL}/customers`, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log(response.data);
+                    const customersList = document.getElementById('customersList');
+                    customersList.innerHTML = '';
+                    response.data.forEach(customer => {
+                        const customerItem = document.createElement('div');
+                        customerItem.innerHTML = `
+                            <p>Username: ${customer.username}</p>
+                            <p>Name: ${customer.name}</p>
+                            <button onclick="toggleCustomer(${customer.id})">${customer.active ? 'Deactivate' : 'Activate'}</button>
+                        `;
+                        customersList.appendChild(customerItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching customers:', error);
+                });
+        };
+
+        const loanBook = (bookId) => {
+            axios.post(`${SERVER_URL}/loan`, { book_id: bookId }, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log('Book loaned successfully');
+                    viewBooks();
+                })
+                .catch(error => {
+                    console.error('Error loaning book:', error);
+                });
+        };
+
+        const returnBook = (bookId) => {
+            axios.post(`${SERVER_URL}/return`, { book_id: bookId }, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log('Book returned successfully');
+                    viewBooks();
+                })
+                .catch(error => {
+                    console.error('Error returning book:', error);
+                });
+        };
+
+        const toggleCustomer = (customerId) => {
+            axios.post(`${SERVER_URL}/toggle_customer/${customerId}`, {}, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log('Customer toggled successfully');
+                    viewCustomers();
+                })
+                .catch(error => {
+                    console.error('Error toggling customer:', error);
+                });
+        };
+
+        const addBook = () => {
+            const title = document.getElementById('bookTitle').value;
+            const author = document.getElementById('bookAuthor').value;
+
+            axios.post(`${SERVER_URL}/add_book`, { title, author }, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log('Book added successfully');
+                    viewBooks();
+                })
+                .catch(error => {
+                    console.error('Error adding book:', error);
+                });
+        };
+
+        const updateBook = () => {
+            const bookId = document.getElementById('bookId').value;
+            const newTitle = document.getElementById('newTitle').value;
+            const newAuthor = document.getElementById('newAuthor').value;
+
+            axios.post(`${SERVER_URL}/update_book`, { book_id: bookId, title: newTitle, author: newAuthor }, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log('Book updated successfully');
+                    viewBooks();
+                })
+                .catch(error => {
+                    console.error('Error updating book:', error);
+                });
+        };
+
+        const toggleBook = () => {
+            const bookId = document.getElementById('toggleBookId').value;
+
+            axios.post(`${SERVER_URL}/toggle_book/${bookId}`, {}, { headers: getAuthHeaders() })
+                .then(response => {
+                    console.log('Book status toggled successfully');
+                    viewBooks();
+                })
+                .catch(error => {
+                    console.error('Error toggling book status:', error);
+                });
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-image: url('library.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar {
+            overflow: hidden;
+            background-color: rgba(0,0,0,0.7);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+        }
+        .navbar a {
+            color: white;
+            padding: 14px 20px;
+            text-decoration: none;
+            text-align: center;
+        }
+        .navbar a:hover {
+            background-color: rgba(255,255,255,0.3);
+        }
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            background-color: rgba(0,0,0,0.5);
+            padding: 2rem;
+            margin: 2rem;
+            border-radius: 10px;
+        }
+        .form-container {
+            background-color: rgba(255,255,255,0.8);
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: left;
+            color: black;
+        }
+        .form-container input, .form-container select {
+            width: 100%;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        .form-container button {
+            width: 100%;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="#" id="home-link">Home</a>
+            <a href="#" id="profile-link">Profile</a>
+        </div>
+        <div class="navbar-right">
+            <a href="#" id="register-link">Register</a>
+            <a href="#" id="login-link">Login</a>
+            <a href="#" id="logout-link">Logout</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <h1 id="welcome-message">Welcome, Guest</h1>
+        <div id="form-container" class="form-container"></div>
+    </div>
+
+    <script>
+        const MY_SERVER = "http://127.0.0.1:5000";
+
+        const welcomeMessage = document.getElementById('welcome-message');
+        const formContainer = document.getElementById('form-container');
+        const homeLink = document.getElementById('home-link');
+        const profileLink = document.getElementById('profile-link');
+        const registerLink = document.getElementById('register-link');
+        const loginLink = document.getElementById('login-link');
+        const logoutLink = document.getElementById('logout-link');
+
+        let user = null;  // To store the logged-in user
+
+        function showHome() {
+            formContainer.innerHTML = '';
+            welcomeMessage.textContent = `Welcome, ${user ? user.firstName : 'Guest'}`;
+        }
+
+        function showRegisterForm() {
+            formContainer.innerHTML = `
+                <h2>Register</h2>
+                <form id="register-form">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <label for="role">Role:</label>
+                    <select id="role" name="role" required>
+                        <option value="admin">Admin</option>
+                        <option value="customer">Customer</option>
+                    </select>
+                    <button type="submit">Register</button>
+                </form>
+            `;
+            document.getElementById('register-form').addEventListener('submit', registerUser);
+        }
+
+        function showLoginForm() {
+            formContainer.innerHTML = `
+                <h2>Login</h2>
+                <form id="login-form">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <button type="submit">Login</button>
+                </form>
+            `;
+            document.getElementById('login-form').addEventListener('submit', loginUser);
+        }
+
+        function showProfile() {
+            if (!user) {
+                alert('You need to login first!');
+                return;
+            }
+            formContainer.innerHTML = `
+                <h2>Profile</h2>
+                <form id="profile-form">
+                    <label for="firstName">First Name:</label>
+                    <input type="text" id="firstName" name="firstName" value="${user.firstName}" required>
+                    <label for="lastName">Last Name:</label>
+                    <input type="text" id="lastName" name="lastName" value="${user.lastName}" required>
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" value="${user.email}" required>
+                    <label for="phone">Phone Number:</label>
+                    <input type="tel" id="phone" name="phone" value="${user.phone}" required>
+                    <button type="submit">Update Profile</button>
+                </form>
+            `;
+            document.getElementById('profile-form').addEventListener('submit', updateProfile);
+        }
+
+        function registerUser(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password'),
+                role: formData.get('role')
+            };
+
+            fetch(`${MY_SERVER}/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert('Registration successful!');
+                showLoginForm();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function loginUser(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+
+            fetch(`${MY_SERVER}/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                user = result.user;
+                welcomeMessage.textContent = `Welcome, ${user.firstName}`;
+                showHome();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function updateProfile(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone')
+            };
+
+            fetch(`${MY_SERVER}/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${user.token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                user = result.user;
+                alert('Profile updated successfully!');
+                welcomeMessage.textContent = `Welcome, ${user.firstName}`;
+                showHome();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        homeLink.addEventListener('click', showHome);
+        profileLink.addEventListener('click', showProfile);
+        registerLink.addEventListener('click', showRegisterForm);
+        loginLink.addEventListener('click', showLoginForm);
+        logoutLink.addEventListener('click', () => {
+            user = null;
+            welcomeMessage.textContent = 'Welcome, Guest';
+            formContainer.innerHTML = '';
+        });
+
+        showHome();
+    </script>
+
+</body>
+</html>
